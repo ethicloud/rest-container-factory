@@ -4,11 +4,6 @@ import docker
 app = Flask(__name__)
 
 
-@app.route('/hello')
-def hello():
-    return 'World'
-
-
 @app.route('/container', methods=['PUT'])
 def containers():
     if request.method == 'PUT':
