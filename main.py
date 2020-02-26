@@ -14,8 +14,11 @@ def containers():
     if request.method == 'PUT':
         if request.form['name']:
             client = docker.from_env()
-            client.containers.run("nginx", detach=True, ports={
-                                  "80/tcp": 80}, name=request.form['name'])
+            client.containers.run(
+                "nginx", detach=True,
+                ports={"80/tcp": 80},
+                name=request.form['name']
+            )
             return 'No Content', 204
         return 'Not Acceptable', 406
 
@@ -24,5 +27,7 @@ def containers():
 def container(name):
     if request.method == 'DELETE':
         client = docker.from_env()
-        client.containers.get(name).stop()
+        container = client.containers.get(name)
+        container.stop()
+        container.rm()
         return 'No Content', 204
