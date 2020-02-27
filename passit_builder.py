@@ -6,8 +6,8 @@ def build_passit(name):
     db_name = "passit_db-" + name
     db_password = "s3cr3t"
     passit_name = "passit-" + name
-    smtp_user = 'sebastien.marchal@dotsafe.fr'
-    smtp_password = 'MVVRXM9WyM49wtUtv4yKCxqoXfP67h'
+    smtp_user = os.environ['SMTP_USER']
+    smtp_password = os.environ['SMTP_PASSWORD']
 
     database = client.containers.create(
         image="postgres",
