@@ -1,4 +1,5 @@
 import docker
+import os
 
 def build_passit(name):
     client = docker.from_env()
