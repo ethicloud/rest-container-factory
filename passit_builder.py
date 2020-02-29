@@ -9,12 +9,13 @@ def build_passit(name):
     passit_name = "passit-" + name
     smtp_user = os.environ['SMTP_USER']
     smtp_password = os.environ['SMTP_PASSWORD']
+    network = 'ethicloud_default'
 
     database = client.containers.create(
         image="postgres",
         environment={'POSTGRES_PASSWORD': db_password},
         name=db_name,
-        network='passit_default'
+        network=network
     )
 
     passit = client.containers.create(
@@ -42,7 +43,7 @@ def build_passit(name):
           'traefik.http.routers.{}secure-router.tls'.format(passit_name): 'true',
           'traefik.http.routers.{}secure-router.rule'.format(passit_name): 'Host(`{}.local`)'.format(passit_name)
         },
-        network='passit_default'
+        network=network
     )
 
     database.start()
