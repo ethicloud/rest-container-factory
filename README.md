@@ -1,5 +1,29 @@
 # rest-container-factory
 
+Created conainers will join the `ethicloud_default` network created by the docker-ethicloud project.
+
+## Environnements
+
+Environnement variables should be set for this code to run:
+* SMTP_USER: needed for passit to send emails
+* SMTP_PASSWORD: password for the smtp user
+
+## Tests
+
+Requesting a passit instance.
+This will create 2 new containers for passit and it's database.
+```bash
+curl -X PUT http://<host>:5000/container/<name> -d 'service=passit'
+```
+
+Deleting a passit instance.
+This will delete the passit container and it's database.
+```bash
+curl -X DELETE http://<host>:5000/container/<name>
+```
+
+## Useful
+
 To run the container:
 ```bash
 docker build -t rcf
@@ -10,21 +34,3 @@ docker run \
   --mount type=bind,source=/var/lib/docker,destination=/var/lib/docker \
   -p 5000:8000 rcf
 ```
-
-You can then ask the server to create containers with the following requests:
-```bash
-curl
-  --url http://yseult:5000/container/first \
-  --header 'content-type: multipart/form-data; boundary=---011000010111000001101001' \
-  --form service=passit \
-  --form =```
-
-curl --request PUT \
-  --url http://yseult:5000/container/two \
-  --header 'content-type: multipart/form-data; boundary=---011000010111000001101001' \
-  --form service=passit \
-  --form =
-```
-
-Containers will join the `passit_default` network created by the traefik docker-compose in passit project.
-Traefik needs to be launched first.

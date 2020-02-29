@@ -1,50 +1,55 @@
 import docker
 import os
 
-def build_passit(name):
-    client = docker.from_env()
-    # TODO : refacto string format
-    db_name = "passit_db-" + name
-    db_password = "s3cr3t"
-    passit_name = "passit-" + name
-    smtp_user = os.environ['SMTP_USER']
-    smtp_password = os.environ['SMTP_PASSWORD']
-    network = 'ethicloud_default'
+DOCKER_CLIENT = docker.from_env()
+DOCKER_NETWORK = 'ethicloud_default'
+SMTP_USER = os.environ['SMTP_USER']
+SMTP_PASSWORD = os.environ['SMTP_PASSWORD']
 
-    database = client.containers.create(
+
+def create_postgresql_container(name, password):
+    return DOCKER_CLIENT.containers.create(
         image="postgres",
-        environment={'POSTGRES_PASSWORD': db_password},
-        name=db_name,
-        network=network
+        environment={'POSTGRES_PASSWORD': password},
+        name="{name}-postgres",
+        network=DOCKER_NETWORK
     )
 
-    passit = client.containers.create(
+
+def create_passit_container(name, db_name, db_password):
+    service = "{name}-passit"
+    return DOCKER_CLIENT.containers.create(
         image="passit/passit:stable",
         command="bin/start.sh",
         environment={
-            'DATABASE_URL': 'postgres://postgres:{}@{}:5432/postgres'.format(db_password, db_name),
+            'DATABASE_URL': 'postgres://postgres:{db_password}@{db_name}:5432/postgres',
             'SECRET_KEY': 'myscecretkeypasswordlol',
             'IS_DEBUG': 'False',
-            'EMAIL_URL': 'smtp+ssl://{}:{}@smtp.gmail.com:465'.format(smtp_user, smtp_password),
+            'EMAIL_URL': 'smtp+ssl://{SMTP_USER}:{SMTP_PASSWORD}@smtp.gmail.com:465',
             'DEFAULT_FROM_EMAIL': "passit@something.com",
-            'EMAIL_CONFIRMATION_HOST': "https://{}.local".format(passit_name)
+            'EMAIL_CONFIRMATION_HOST': "https://{service}.local"
         },
-        name=passit_name,
-        links={db_name:None},
+        name="{name}-passit",
+        links={db_name: None},
         labels={
-          'traefik.enable': 'true',
-          'traefik.docker.network': 'default',
-          'traefik.http.services.{}-service.loadbalancer.server.port'.format(passit_name): '8080',
-          'traefik.http.middlewares.redirect-middleware.redirectscheme.scheme': 'https',
-          'traefik.http.routers.{}-router.entrypoints'.format(passit_name): 'web',
-          'traefik.http.routers.{}-router.rule'.format(passit_name): 'Host(`{}.local`)'.format(passit_name),
-          'traefik.http.routers.{}-router.middlewares'.format(passit_name): 'redirect-middleware',
-          'traefik.http.routers.{}secure-router.entrypoints'.format(passit_name): 'websecure',
-          'traefik.http.routers.{}secure-router.tls'.format(passit_name): 'true',
-          'traefik.http.routers.{}secure-router.rule'.format(passit_name): 'Host(`{}.local`)'.format(passit_name)
+            'traefik.enable': 'true',
+            'traefik.docker.network': 'default',
+            'traefik.http.services.{service}-service.loadbalancer.server.port': '8080',
+            'traefik.http.middlewares.redirect-middleware.redirectscheme.scheme': 'https',
+            'traefik.http.routers.{service}-router.entrypoints': 'web',
+            'traefik.http.routers.{service}-router.rule': 'Host(`{service}.local`)',
+            'traefik.http.routers.{service}-router.middlewares': 'redirect-middleware',
+            'traefik.http.routers.{service}secure-router.entrypoints': 'websecure',
+            'traefik.http.routers.{service}secure-router.tls': 'true',
+            'traefik.http.routers.{service}secure-router.rule': 'Host(`{service}.local`)'
         },
-        network=network
+        network=DOCKER_NETWORK
     )
 
+
+def build_passit(name):
+    password = 'P@ssw0rd' # TODO
+    database = create_postgresql_container(name, password)
+    passit = create_passit_container(name, database.name, password)
     database.start()
     passit.start()
