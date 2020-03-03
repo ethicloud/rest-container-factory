@@ -59,3 +59,14 @@ def build_passit(name):
     passit = create_passit_container(name, database.name, password)
     database.start()
     passit.start()
+
+
+def destroy_passit(name):
+    service = name + '-passit'
+    database = name + '-postgres'
+    container = DOCKER_CLIENT.containers.get(service)
+    container.stop()
+    container.remove()
+    container = DOCKER_CLIENT.containers.get(database)
+    container.stop()
+    container.remove()
